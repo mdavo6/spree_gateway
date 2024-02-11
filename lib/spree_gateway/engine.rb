@@ -5,6 +5,7 @@ module SpreeGateway
     config.autoload_paths += %W(#{config.root}/lib)
 
     config.after_initialize do |app|
+      app.config.spree.payment_methods << Spree::Gateway::Airwallex
       app.config.spree.payment_methods << Spree::Gateway::AuthorizeNet
       app.config.spree.payment_methods << Spree::Gateway::AuthorizeNetCim
       app.config.spree.payment_methods << Spree::Gateway::BalancedGateway
@@ -48,6 +49,9 @@ module SpreeGateway
         Rails.application.config.cache_classes ? require(c) : load(c)
       end
       Dir.glob(File.join(File.dirname(__FILE__), '../../lib/active_merchant/**/*_decorator*.rb')) do |c|
+        Rails.application.config.cache_classes ? require(c) : load(c)
+      end
+      Dir.glob(File.join(File.dirname(__FILE__), '../../lib/**/concerns/**/*_decorator*.rb')) do |c|
         Rails.application.config.cache_classes ? require(c) : load(c)
       end
 

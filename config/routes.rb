@@ -16,6 +16,7 @@ Spree::Core::Engine.add_routes do
         end
         namespace :webhooks do
           post :stripe
+          post :airwallex
         end
       end
     end

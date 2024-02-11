@@ -15,7 +15,16 @@ module Spree
 
             if last_valid_payment.present?
               client_secret = last_valid_payment.intent_client_key
-              return render json: { client_secret: client_secret }, status: :ok
+              #publishable_key = last_valid_payment.payment_method&.preferred_publishable_key
+              payment_intent = last_valid_payment.intent_id
+              currency = last_valid_payment.currency
+              payment_id = last_valid_payment.id
+              return render json: {
+                payment_id: payment_id,
+                client_secret: client_secret,
+                payment_intent: payment_intent,
+                currency: currency
+              }, status: :ok
             end
 
             render_error_payload(I18n.t('spree.no_payment_intent_created'))

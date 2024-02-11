@@ -76,13 +76,87 @@ module Spree
             end
             render json: { message: I18n.t('spree.stripe.response.success') }, status: :ok
           end
+        
+          def airwallex
+            # require 'stripe'
+            # Stripe.api_key = ::Spree::Gateway::StripeElementsGateway&.active.first.get_preference(:secret_key)
+            endpoint_secret = ::Spree::Gateway::Airwallex&.active.first.get_preference(:endpoint_secret)
 
+            payload = request.body.read
+            timestamp = request.headers['x-timestamp']
+            value_to_digest = timestamp + payload
+            event = nil
+
+            if endpoint_secret
+              signature = OpenSSL::HMAC.hexdigest("SHA256", endpoint_secret, value_to_digest)
+              puts "Spree signature is #{signature}"
+              puts "Airwallex signature is #{request.headers['x-signature']}"
+              if signature == request.headers['x-signature']
+                begin
+                  event = JSON.parse(payload, symbolize_names: true)
+                rescue JSON::ParserError => e
+                  # Invalid payload
+                  puts "Webhook error while parsing request. #{e.message})"
+                  status 400
+                  return
+                end
+              else
+                puts "Webhook signature verification failed."
+                render json: { status: 400, error: "Webhook signature verification failed." }, status: :bad_request and return
+              end
+            else
+              puts "No endpoint secret entered."
+              status 400
+            end
+
+            # Handle the event
+            case event[:name]
+            when 'payment_intent.succeeded'
+              puts "Payment for #{event[:data][:object][:amount]} succeeded."
+
+              handle_payment_intent(event, "completed")
+            when 'payment_intent.requires_capture'
+              puts "Payment for #{event[:data][:object][:amount]} requires capture."
+
+              handle_payment_intent(event, "pending")
+            else
+              puts "Unhandled event type: #{event[:name]}"
+            end
+            render json: { message: I18n.t('spree.stripe.response.success') }, status: :ok
+          end
+        
           private
 
           def cannot_make_transition?(order)
             order.complete? || order.errors.present?
           end
+          
+          def handle_payment_intent(event, end_state)
+            aw_latest_payment = event[:data][:object][:latest_payment_attempt]
+            aw_payment_method = aw_latest_payment[:payment_method][:card]
+            
+            payment = Spree::Payment.find_by(intent_id: event[:sourceId])
+            
+            if payment && (payment.state != end_state)
+              payment_method = payment.payment_method
+              # Create source using payment details from stripe payment element
+              if payment.source.blank? && payment_method.try(:payment_source_class)
+                payment.source = payment_method.payment_source_class.create!({
+                  cc_type: aw_payment_method[:brand],
+                  month: aw_payment_method[:expiry_month],
+                  year: aw_payment_method[:expiry_year],
+                  last_digits: aw_payment_method[:last4],
+                  payment_method: payment_method
+                })
+              end
 
+              payment.update!(state: end_state)
+              
+              # Update order status to complete
+              order = payment.order
+              order.next until cannot_make_transition?(order)
+            end
+          end
         end
       end
     end
