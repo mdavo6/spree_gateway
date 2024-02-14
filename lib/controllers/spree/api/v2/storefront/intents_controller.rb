@@ -16,7 +16,7 @@ module Spree
             
             payment_method = Spree::PaymentMethod.find(params[:payment_method_id])
             
-            payment_intent = payment_method.create_intent(spree_current_order.display_total.amount_in_cents, options)
+            payment_intent = payment_method.create_intent(spree_current_order.display_outstanding_balance.money, options)
 
             spree_current_order.payments.create(
               amount: payment_intent.params["amount"],
