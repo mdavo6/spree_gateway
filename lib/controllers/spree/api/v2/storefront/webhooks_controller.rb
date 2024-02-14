@@ -111,6 +111,12 @@ module Spree
 
             # Handle the event
             case event[:name]
+            # when 'payment_intent.created'
+            #   payment_intent = event[:data][:object]
+            #   puts "Payment for #{payment_intent[:amount]} created."
+            #   order = Spree::Order.find(payment_intent[:merchant_order_id])
+            #   byebug
+            #   order.payments.create(intent_id: payment_intent['id'])
             when 'payment_intent.succeeded'
               puts "Payment for #{event[:data][:object][:amount]} succeeded."
 
@@ -134,7 +140,6 @@ module Spree
           def handle_payment_intent(event, end_state)
             aw_latest_payment = event[:data][:object][:latest_payment_attempt]
             aw_payment_method = aw_latest_payment[:payment_method][:card]
-            
             payment = Spree::Payment.find_by(intent_id: event[:sourceId])
             
             if payment && (payment.state != end_state)

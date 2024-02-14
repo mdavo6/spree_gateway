@@ -23,7 +23,7 @@ module Spree
       # TO-DO - Should be true after intent created
     end
 
-    def create_intent(money, card, options)
+    def create_intent(money, options)
       provider.create_payment_intent(money, options)
     end
 
@@ -32,18 +32,15 @@ module Spree
     end
 
     def purchase(money, card, options)
-      byebug
       provider.purchase(money, card, options)
     end
     
     def capture(money, card, options)
       intent = get_intent(options)
-      byebug
       provider.capture(money, intent, options)
     end
 
     def authorize(money, card, options)
-      byebug
       provider.authorize(money, card, options)
     end
     

@@ -4,13 +4,13 @@ module SpreeGateway
       # Added the 'intent' state to allow payment gateway to handle creation of payment intent.
       # Overridden here for now, but assume this would be better sitting in core.
       base.state_machine initial: :checkout do
-        event :started_creating_intent do
-          transition from: [:checkout], to: :creating_intent
-        end
+        # event :started_creating_intent do
+        #   transition from: [:checkout], to: :creating_intent
+        # end
 
-        event :intent_created do
-          transition from: [:creating_intent], to: :intent
-        end
+        # event :intent_created do
+        #   transition from: [:creating_intent], to: :intent
+        # end
 
         # With card payments, happens before purchase or authorization happens
         #
