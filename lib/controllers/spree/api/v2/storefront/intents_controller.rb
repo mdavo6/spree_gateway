@@ -10,6 +10,7 @@ module Spree
             spree_current_order = Spree::Order.find(params[:order_id])
             options = {}
             options[:merchant_order_id] = params[:order_id]
+            options[:currency] = params[:currency]
 
             spree_authorize! :update, spree_current_order, order_token
             
